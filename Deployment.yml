@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: tomee-deployment
+spec:
+ replicas: 2
+ strategy:
+  rollingUpdate:
+   maxSurge: 1
+   maxUnavailable: 1
+ minReadySeconds: 30
+ selector:
+  matchLabels:
+   app: tomee
+ template:
+  metadata:
+   name: tomee-pod
+   labels:
+    app: tomee
+  spec:
+   affinity:
+       nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+         nodeSelectorTerms:
+          - matchExpressions:
+             - key: name
+               operator: In
+               values:
+                - worker1 #kubectl label nodes ip-172.31.32.01 name=worker1
+        preferredDuringSchedulingIgnoredDuringExecution:
+         - weight: 1
+           preference:
+            matchExpressions:
+             - key: name
+               operator: In
+               values:
+                - worker2 #kubectl label nodes ip-172.31.32.02 name=worker2
+   containers:
+    - name: tomee-container
+      image: tomee
+      ports:
+       - containerPort: 8080
+      resources:
+       requests:
+        cpu: "100m"
+        memory: "256Mi"
+       limits:
+        cpu: "100m"
+        memory: "512Mi"
+      env:
+       - name: MYSQL_USERNAME
+         valueFrom:
+          secretKeyRef:
+           name: mysql-secret
+           key: username
+       - name: MYSQL_PASSWORD
+         valueFrom:
+          secretKeyRef:
+           name: mysql-secret
+           key: password
+      livenessProbe:
+       exec:
+        command:
+         - cat
+       failureThreshold: 1
+       periodSeconds: 10
+       initialDelaySeconds: 5
+       timeoutSeconds: 1
+      readinessProbe:
+       exec:
+        command:
+         - cat
+       failureThreshold: 1
+       periodSeconds: 10
+       initialDelaySeconds: 5
+       timeoutSeconds: 1
+   tolerations:
+    - key: "name"
+      operator: "Equal"
+      value: "worker1"
+      effect: "NoSchedule"

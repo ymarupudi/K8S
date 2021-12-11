@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+ name: tomee-ds
+spec:
+ selector:
+  matchLabels:
+   app: tomee
+ template:
+  metadata:
+   name: tomee-pod
+   labels:
+    app: tomee
+  spec:
+   containers:
+    - name: tomee-container
+      image: tomee
+      ports:
+       - containerPort: 8080
