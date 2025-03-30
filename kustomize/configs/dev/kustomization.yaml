@@ -1,0 +1,51 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../../apps
+#- repo_url//dir/?ref=branch
+
+namespace: test
+
+namePrefix: alices-
+nameSuffix: -v2
+
+commonAnnotations:
+  environment: dev
+  owner: devops
+
+commonLabels:
+  someName: someValue
+
+generatorOptions:
+  labels:
+    fruit: apple
+configMapGenerator:
+- name: env-vars
+  behavior: create # replace/merge/create
+  literals: 
+  - JAVA_HOME=/opt/java/jdk
+  options:
+    annotations:
+      animal: cow
+    disableNameSuffixHash: true
+    labels:
+      pet: dog
+
+images:
+- name: nginx
+  newTag: 1.14.3
+
+replicas:
+- name: nginx-deployment
+  count: 5
+
+patches:
+- target:
+    version: v1
+    kind: Deployment
+    name: nginx-deployment
+  patch: |-
+    - op: add
+      path: /metadata/labels/app1
+      value: nginx1
